@@ -38,33 +38,29 @@ int test_temp(){
 
     //mraa_aio_dir(temperature,MRAA_AIO_OUT);
     signal(SIGINT,do_when_interrupted);
-    struct pollfd poll_array[2];
+    struct pollfd poll_array[1];
     poll_array[0].fd = STDIN_FILENO;
     poll_array[0].events = POLLIN | POLLHUP | POLLERR;
 
-    poll_array[1].fd = temperature;
-    poll_array[1].events = POLLIN | POLLHUP | POLLERR;
-
     while(run_flag){
-        int r = poll(poll_array, 2, 0);
+        int r = poll(poll_array, 1, 0);
         if (r < 0)
             exit(1);
-        if (poll_array[0].revents & POLLIN) //input from stdin
+        if (poll_array[0].revents & POLLIN) //input from temp sensor
         {
-
+            printf("input from stdin ");
+            sleep(5);
         }
-        if (poll_array[1].revents & POLLIN) //input from temp sensor
-        {
-            uint16_t temp;
-            temp = mraa_aio_read(temperature);
-            float R = 625.0 / temp - 1.0;
-            R = R0 * R;
-            double log_thing = log(R / R0);
-            float real_temp = 1.0 / (log_thing / B + 1 / 298.15) - 273.15; //temperature conversion
 
-            printf("temperature:%f \n", real_temp);
-            sleep(1);
-        }
+        /*uint16_t temp;
+        temp = mraa_aio_read(temperature);
+        float R = 625.0 / temp - 1.0;
+        R = R0 * R;
+        double log_thing = log(R / R0);
+        float real_temp = 1.0 / (log_thing / B + 1 / 298.15) - 273.15; //temperature conversion
+
+        printf("temperature:%f \n", real_temp);
+        sleep(1);*/
     }
     mraa_aio_close(temperature);
     return 0;
