@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
                             current_time = localtime(&timer);
                             strftime(time_storage,9,"%H:%M:%S",current_time);
 
-                            write(log_val,time_storage,strlen(current_time));
+                            write(log_val,time_storage,strlen(time_storage));
                             write(log_val," SHUTDOWN",9);
                         }
                         exit(0);
