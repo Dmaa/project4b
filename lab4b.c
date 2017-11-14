@@ -40,6 +40,20 @@ struct tm* current_time;
 char time_storage[9];
 sig_atomic_t volatile run_flag=1;
 
+void do_when_interrupted()
+{
+    if (logging) {
+        //get time
+        time(&timer);
+        current_time = localtime(&timer);
+        strftime(time_storage, 9, "%H:%M:%S", current_time);
+
+        write(log_val, time_storage, strlen(time_storage));
+        write(log_val, " SHUTDOWN", 9);
+    }
+    exit(0);
+}
+
 int thread_function()
 {
     mraa_aio_context temperature;
@@ -80,19 +94,7 @@ int thread_function()
     return 0;
 }
 
-void do_when_interrupted()
-{
-    if (logging) {
-        //get time
-        time(&timer);
-        current_time = localtime(&timer);
-        strftime(time_storage, 9, "%H:%M:%S", current_time);
 
-        write(log_val, time_storage, strlen(time_storage));
-        write(log_val, " SHUTDOWN", 9);
-    }
-    exit(0);
-}
 
 int main(int argc, char *argv[])
 {
