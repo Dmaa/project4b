@@ -23,6 +23,7 @@ static struct option long_options[]={
         {0,0,0,0}
 };
 
+bool processedOne = false;
 int period = 1;
 int running = 1;
 char tempType = 'F';
@@ -86,6 +87,7 @@ int thread_function()
             }
             printf("%s %.1f \n", time_storage, real_temp);
         }
+        processedOne = true;
         sleep(period);
     }
     mraa_aio_close(temperature);
@@ -152,86 +154,88 @@ int main(int argc, char *argv[])
     mraa_gpio_dir(button, MRAA_GPIO_IN);
     mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &do_when_interrupted, NULL);
     while(true) {
+        if(processedOne)
+        {
+            int retval = poll(poll_list, (unsigned long) 1, 0);
+            if (retval < 0) {
+                fprintf(stderr, "Polling Error\n");
+            }
 
-        int retval = poll(poll_list, (unsigned long) 1, 0);
-        if (retval < 0) {
-            fprintf(stderr, "Polling Error\n");
-        }
+            if ((poll_list[0].revents & POLLIN) == POLLIN) {
+                count = read(STDIN_FILENO, buffer, 2048);
+                int i;
+                for (i = 0; i < count; i++) {
+                    if (buffer[i] == 3) {
+                        exit(1);
+                    } else if (buffer[i] == 10 || buffer[i] == 13) {
+                        command[command_index] = '\0';
+                        printf("RECEIVED: %s", command);
+                        if (strcmp(command, "OFF") == 0) {
+                            //printf("TURNING OFF NOW!\n");
+                            if (logging) {
+                                write(log_val, command, strlen(command));
+                                write(log_val, "\n", 1);
+                                //get time
+                                time(&timer);
+                                current_time = localtime(&timer);
+                                strftime(time_storage, 9, "%H:%M:%S", current_time);
 
-        if ((poll_list[0].revents & POLLIN) == POLLIN) {
-            count = read(STDIN_FILENO, buffer, 2048);
-            int i;
-            for (i = 0; i < count; i++) {
-                if (buffer[i] == 3) {
-                    exit(1);
-                } else if (buffer[i] == 10 || buffer[i] == 13) {
-                    command[command_index] = '\0';
-                    printf("RECEIVED: %s", command);
-                    if (strcmp(command, "OFF") == 0) {
-                        //printf("TURNING OFF NOW!\n");
-                        if (logging) {
-                            write(log_val, command, strlen(command));
-                            write(log_val, "\n", 1);
-                            //get time
-                            time(&timer);
-                            current_time = localtime(&timer);
-                            strftime(time_storage, 9, "%H:%M:%S", current_time);
-
-                            write(log_val, time_storage, strlen(time_storage));
-                            write(log_val, " SHUTDOWN", 9);
-                        }
-                        exit(0);
-                    } else if (strcmp(command, "STOP") == 0) {
-                        running = 0;
-                        if (logging) {
-                            write(log_val, command, strlen(command));
-                            write(log_val, "\n", 1);
-                        }
-                    } else if (strcmp(command, "START") == 0) {
-                        running = 1;
-                        //printf("START\n");
-                        if (logging) {
-                            write(log_val, command, strlen(command));
-                            write(log_val, "\n", 1);
-                        }
-                    } else if (strcmp(command, "SCALE=F") == 0) {
-                        tempType = 'F';
-                        if (logging) {
-                            write(log_val, command, strlen(command));
-                            write(log_val, "\n", 1);
-                        }
-                    } else if (strcmp(command, "SCALE=C") == 0) {
-                        tempType = 'C';
-                        if (logging) {
-                            write(log_val, command, strlen(command));
-                            write(log_val, "\n", 1);
-                        }
-                    } else {
-                        //check for period
-                        char substr[8];
-                        memcpy(substr, &command[0], 7);
-                        substr[7] = '\0';
-                        if (strcmp(substr, "PERIOD=") == 0) {
-
-                            char period_buffer[1018];
-                            memcpy(period_buffer, &command[7], 1017);
-                            period_buffer[1017] = '\0';
-
-                            int newTime = atoi(period_buffer);
-                            printf("%i \n", newTime);
-                            period = newTime;
+                                write(log_val, time_storage, strlen(time_storage));
+                                write(log_val, " SHUTDOWN", 9);
+                            }
+                            exit(0);
+                        } else if (strcmp(command, "STOP") == 0) {
+                            running = 0;
                             if (logging) {
                                 write(log_val, command, strlen(command));
                                 write(log_val, "\n", 1);
                             }
+                        } else if (strcmp(command, "START") == 0) {
+                            running = 1;
+                            //printf("START\n");
+                            if (logging) {
+                                write(log_val, command, strlen(command));
+                                write(log_val, "\n", 1);
+                            }
+                        } else if (strcmp(command, "SCALE=F") == 0) {
+                            tempType = 'F';
+                            if (logging) {
+                                write(log_val, command, strlen(command));
+                                write(log_val, "\n", 1);
+                            }
+                        } else if (strcmp(command, "SCALE=C") == 0) {
+                            tempType = 'C';
+                            if (logging) {
+                                write(log_val, command, strlen(command));
+                                write(log_val, "\n", 1);
+                            }
+                        } else {
+                            //check for period
+                            char substr[8];
+                            memcpy(substr, &command[0], 7);
+                            substr[7] = '\0';
+                            if (strcmp(substr, "PERIOD=") == 0) {
 
+                                char period_buffer[1018];
+                                memcpy(period_buffer, &command[7], 1017);
+                                period_buffer[1017] = '\0';
+
+                                int newTime = atoi(period_buffer);
+                                printf("%i \n", newTime);
+                                period = newTime;
+                                if (logging) {
+                                    write(log_val, command, strlen(command));
+                                    write(log_val, "\n", 1);
+                                }
+
+                            }
                         }
+                        strcpy(command, "");
+                        command_index = 0;
+                    } else {
+                        command[command_index] = buffer[i];
+                        command_index += 1;
                     }
-                    strcpy(command, "");
-                    command_index = 0;
-                } else {
-                    command[command_index] = buffer[i];
-                    command_index += 1;
                 }
             }
         }
