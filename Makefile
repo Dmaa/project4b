@@ -1,8 +1,8 @@
-make default: lab4b.c
+default: lab4b.c
 	gcc -lm -lmraa -Wall -Wextra -lpthread lab4b.c -o lab4b
-make check:
+check:
 	echo "success"
-make clean:
+clean:
 	rm lab4b *.txt *.tar.gz
-make dist:
+dist:
 	tar -cvzf lab4b-304815342.tar.gz *.c Makefile README
