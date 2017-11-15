@@ -3,6 +3,6 @@ default: lab4b.c
 check:
 	echo "success"
 clean:
-	rm lab4b *.txt *.tar.gz
+	rm -f *.txt *.tar.gz
 dist:
 	tar -cvzf lab4b-304815342.tar.gz *.c Makefile README
