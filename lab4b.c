@@ -31,9 +31,7 @@ int log_val;
 int logging = 0;
 const int R0 = 100000;
 const int B=4275;
-char cr = 13;
-char lf = 10;
-char space = ' ';
+
 char command[1024];
 time_t timer;
 struct tm* current_time;
